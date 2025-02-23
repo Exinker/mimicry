@@ -1,11 +1,14 @@
 import uuid
 from datetime import datetime, timezone
 from functools import partial
+from typing import Any, Mapping
 
 from sqlalchemy import UUID
 from sqlalchemy.orm import (
-    Mapped,
+    ColumnProperty,
     DeclarativeBase,
+    Mapped,
+    class_mapper,
     mapped_column,
 )
 
@@ -20,6 +23,27 @@ class BaseModel(DeclarativeBase):
     created_at: Mapped[datetime] = mapped_column(
         default=partial(datetime.now, tz=timezone.utc),
     )
+
+    def asdict(self) -> Mapping[str, Any]:
+        cls = self.__class__
+
+        content = dict()
+        for property in class_mapper(cls).iterate_properties:
+            if isinstance(property, ColumnProperty):
+                content[property.key] = getattr(self, property.key)
+
+        return content
+
+    def __str__(self) -> str:
+        cls = self.__class__
+
+        return '{name}({content})'.format(
+            name=cls.__name__,
+            content=', '.join([
+                f'{key}={value}'
+                for key, value in self.asdict().items()
+            ])
+        )
 
 
 class UserModel(BaseModel):
