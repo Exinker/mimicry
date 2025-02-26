@@ -1,0 +1,4 @@
+
+class UserManagerError(Exception):
+    pass
+
